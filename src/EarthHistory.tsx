@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { List, Typography } from "antd";
 import Chart from "chart.js/auto";
 import "./EarthHistory.css";
@@ -8,6 +8,13 @@ interface GeologicalAge {
   color: string;
   startTime: number;
   endTime: number;
+}
+
+interface GeologicalEvent {
+  name: string;
+  color: string;
+  timeInHours: number;
+  description: string;
 }
 
 const geologicalAges: GeologicalAge[] = [
@@ -20,22 +27,181 @@ const geologicalAges: GeologicalAge[] = [
   { name: "Quaternary", color: "#b10dc9", startTime: 23.9978, endTime: 24 },
 ];
 
+const geologicalEvents: GeologicalEvent[] = [
+  {
+    name: "Formation of Earth",
+    color: "#ff4136",
+    timeInHours: 0,
+    description: "Formation of Earth",
+  },
+  {
+    name: "Formation of the Moon",
+    color: "#ff851b",
+    timeInHours: 0.5,
+    description: "Formation of the Moon",
+  },
+  {
+    name: "Formation of First Crust and Oceans",
+    color: "#ffdc00",
+    timeInHours: 1.2,
+    description: "Formation of First Crust and Oceans",
+  },
+  {
+    name: "First Evidence of Life",
+    color: "#2ecc40",
+    timeInHours: 4.4,
+    description: "First Evidence of Life",
+  },
+  {
+    name: "Photosynthesis and Oxygenation",
+    color: "#39cccc",
+    timeInHours: 8,
+    description: "Photosynthesis and Oxygenation",
+  },
+  {
+    name: "Eukaryotic Cells Appear",
+    color: "#0074d9",
+    timeInHours: 16,
+    description: "Eukaryotic Cells Appear",
+  },
+  {
+    name: "Cambrian Explosion",
+    color: "#b10dc9",
+    timeInHours: 21.42,
+    description: "Cambrian Explosion",
+  },
+  {
+    name: "Ordovician-Silurian Extinction",
+    color: "#85144b",
+    timeInHours: 21.85,
+    description: "Ordovician-Silurian Extinction",
+  },
+  {
+    name: "Age of Fishes",
+    color: "#FF851B",
+    timeInHours: 22.25,
+    description: "Age of Fishes",
+  },
+  {
+    name: "Permian-Triassic Extinction",
+    color: "#FF4136",
+    timeInHours: 22.96,
+    description: "Permian-Triassic Extinction",
+  },
+  {
+    name: "Mesozoic Era",
+    color: "#39CCCC",
+    timeInHours: 23,
+    description: "Mesozoic Era",
+  },
+  {
+    name: "Cretaceous-Paleogene Extinction",
+    color: "#2ECC40",
+    timeInHours: 23.66,
+    description: "Cretaceous-Paleogene Extinction",
+  },
+  {
+    name: "Neogene Period",
+    color: "#FFDC00",
+    timeInHours: 23.93,
+    description: "Neogene Period",
+  },
+  {
+    name: "Quaternary Period",
+    color: "#0074D9",
+    timeInHours: 23.97,
+    description: "Quaternary Period",
+  },
+  {
+    name: "Holocene Epoch",
+    color: "#B10DC9",
+    timeInHours: 23.999,
+    description: "Holocene Epoch",
+  },
+];
+
 const EarthHistory: React.FC = () => {
   const chartRef = useRef<Chart<"pie"> | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const createChart = () => {
-      // Ensure canvas element and Chart.js are available
       const ctx = canvasRef.current;
       if (!ctx) return;
 
-      // Check if there's an existing chart instance and destroy it
       if (chartRef.current) {
         chartRef.current.destroy();
       }
 
-      // Create new chart instance
+      const clockLabelsPlugin = {
+        id: "clockLabels",
+        afterDraw(chart) {
+          const {
+            ctx,
+            chartArea: { top, right, bottom, left, width, height },
+          } = chart;
+          const centerX = (left + right) / 2;
+          const centerY = (top + bottom) / 2;
+          const radius = Math.min(width, height) / 2;
+          const innerRadius = radius * 0.7; // To place the lines outside the pie chart
+
+          const positions = [
+            { hour: 6, angle: Math.PI / 2 },
+            { hour: 12, angle: Math.PI },
+            { hour: 18, angle: (3 * Math.PI) / 2 },
+            { hour: 24, angle: 0 },
+          ];
+
+          ctx.save();
+          ctx.font = "16px Arial";
+          ctx.fillStyle = "#000";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+
+          // Draw clock hour labels
+          positions.forEach(({ hour, angle }) => {
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            ctx.fillText(hour.toString(), x, y);
+          });
+
+          ctx.restore();
+
+          // Draw event lines and labels
+          geologicalEvents.forEach((event) => {
+            const angle = (event.timeInHours / 24) * 2 * Math.PI - Math.PI / 2;
+            const xOuter = centerX + radius * Math.cos(angle);
+            const yOuter = centerY + radius * Math.sin(angle);
+            const xInner = centerX + innerRadius * Math.cos(angle);
+            const yInner = centerY + innerRadius * Math.sin(angle);
+
+            ctx.beginPath();
+            ctx.moveTo(xInner, yInner);
+            ctx.lineTo(xOuter, yOuter);
+            ctx.strokeStyle = event.color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Place event labels near the outer line
+            ctx.save();
+            ctx.translate(xOuter, yOuter);
+            ctx.rotate(angle);
+            ctx.fillStyle = event.color;
+            ctx.textAlign =
+              angle > Math.PI / 2 && angle < (3 * Math.PI) / 2
+                ? "right"
+                : "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(
+              event.name,
+              angle > Math.PI / 2 && angle < (3 * Math.PI) / 2 ? -10 : 10,
+              0
+            );
+            ctx.restore();
+          });
+        },
+      };
+
       chartRef.current = new Chart(ctx, {
         type: "pie",
         data: {
@@ -68,6 +234,9 @@ const EarthHistory: React.FC = () => {
             legend: {
               display: false,
             },
+            clockLabels: {
+              afterDraw: clockLabelsPlugin.afterDraw,
+            },
           },
           onClick: (evt) => {
             const activeElement = chartRef.current?.getElementsAtEventForMode(
@@ -87,12 +256,12 @@ const EarthHistory: React.FC = () => {
             }
           },
         },
+        plugins: [clockLabelsPlugin],
       });
     };
 
     createChart();
 
-    // Cleanup function
     return () => {
       if (chartRef.current) {
         chartRef.current.destroy();
@@ -104,16 +273,17 @@ const EarthHistory: React.FC = () => {
   return (
     <div className="earth-history-container">
       <canvas id="geologicalAgesChart" ref={canvasRef} />
-      <div className="geological-ages-list">
-        <h2>Geological Ages</h2>
+      <div className="geological-events-list">
+        <h2>Geological Events</h2>
         <List
-          dataSource={geologicalAges}
+          dataSource={geologicalEvents}
           renderItem={(item) => (
             <List.Item style={{ backgroundColor: item.color }}>
               <Typography.Text style={{ color: "#ffffff" }}>
-                {`${item.name}: ${item.startTime.toFixed(
-                  2
-                )} - ${item.endTime.toFixed(2)} hours`}
+                {`${item.name}: ${Math.floor(item.timeInHours)} hours and ${(
+                  (item.timeInHours % 1) *
+                  60
+                ).toFixed(0)} minutes`}
               </Typography.Text>
             </List.Item>
           )}

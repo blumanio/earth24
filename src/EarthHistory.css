@@ -1,0 +1,7 @@
+.earth-history-container {
+  display: flex;
+  justify-content: space-between;
+}
+.earth-history-container {
+  height: 671px !important;
+}
